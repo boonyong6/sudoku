@@ -6,16 +6,16 @@ stopwatch.Start();
 
 try
 {
-    SudokuPuzzle puzzle;
+    //SudokuPuzzle puzzle;
 
-    for (int i = 0; i < 10; i++)
-    {
-        puzzle = SudokuPuzzle.Create();
-        Console.WriteLine(puzzle);
-        //Console.WriteLine();
-    }
+    //for (int i = 0; i < 10; i++)
+    //{
+    //    puzzle = SudokuPuzzle.Create();
+    //    Console.WriteLine(puzzle);
+    //    //Console.WriteLine();
+    //}
 
-    return;
+    //return;
 
     var filePath = args.Length > 0 ? args[0] :
         throw new ArgumentNullException("args[0]", "File path of the Sudoku grid is not provided.");

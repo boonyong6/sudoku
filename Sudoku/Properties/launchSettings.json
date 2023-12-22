@@ -2,7 +2,7 @@
   "profiles": {
     "Sudoku": {
       "commandName": "Project",
-      "commandLineArgs": "../../../sudoku-grid.txt"
+      "commandLineArgs": "../../../sudoku-puzzle.txt"
     }
   }
 }

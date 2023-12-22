@@ -4,15 +4,8 @@ namespace Sudoku
 {
     public class SudokuPuzzle
     {
-        public List<CellList> Boxes { get; }
-        public List<CellList> Rows { get; }
-        public List<CellList> Columns { get; }
-
         private readonly List<Cell> _cells;
         private readonly List<int> _numberChoices;
-        
-        private int _recursionCount = 0;
-
         public SudokuPuzzle(string filePath) : this()
         {
             Load(filePath);
@@ -38,6 +31,9 @@ namespace Sudoku
             _numberChoices = new List<int>(9) { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
         }
 
+        public List<CellList> Boxes { get; }
+        public List<CellList> Columns { get; }
+        public List<CellList> Rows { get; }
         public static SudokuPuzzle Create()
         {
             var sudokuPuzzle = new SudokuPuzzle();
@@ -108,6 +104,94 @@ namespace Sudoku
             return sb.ToString();
         }
 
+        private static int GetMaxFilledCellsCount(Cell cell)
+        {
+            var rowFilledCellsCount = cell.Row.Cells.Where(c => c.Number != 0).Count();
+            var columnFilledCellsCount = cell.Column.Cells.Where(c => c.Number != 0).Count();
+            var boxFilledCellsCount = cell.Box.Cells.Where(c => c.Number != 0).Count();
+            var maxFilledCellsCount = Math.Max(Math.Max(rowFilledCellsCount, columnFilledCellsCount), boxFilledCellsCount);
+
+            return maxFilledCellsCount;
+        }
+
+        /// <summary>
+        /// MRV empty cell has the highest number of filled cells in its row, column or box.
+        /// </summary>
+        /// <param name="emptyCells"></param>
+        /// <returns></returns>
+        private static Cell SelectMrvEmptyCell(List<Cell> emptyCells)
+        {
+            var mrvEmptyCell = emptyCells[0];
+
+            for (int i = 1; i < emptyCells.Count; i++)
+            {
+                if (GetMaxFilledCellsCount(emptyCells[i]) > GetMaxFilledCellsCount(mrvEmptyCell))
+                {
+                    mrvEmptyCell = emptyCells[i];
+                }
+            }
+
+            return mrvEmptyCell;
+        }
+
+        private void ApplySolution(string solution)
+        {
+            var rows = solution.Split("\n");
+
+            for (int x = 0; x < 9; x++)
+            {
+                for (int y = 0; y < 9; y++)
+                {
+                    var number = int.Parse(rows[x][y].ToString());
+                    var cell = _cells.Single(c => c.Coordinate.X == x && c.Coordinate.Y == y);
+                    cell.Number = number;
+                }
+            }
+        }
+
+        private int GetFillableNumber(Cell emptyCell, int currentNumber, IList<int> numberChoices)
+        {
+            var currentNumberIndex = numberChoices.IndexOf(currentNumber);
+
+            if (currentNumberIndex == 8)
+            {
+                return 0;
+            }
+
+            var nextNumber = numberChoices[currentNumberIndex + 1];
+
+            var isExisted = emptyCell.Box.Cells.Where(cell => cell.Number == nextNumber).Any() ||
+                emptyCell.Row.Cells.Where(cell => cell.Number == nextNumber).Any() ||
+                emptyCell.Column.Cells.Where(cell => cell.Number == nextNumber).Any();
+
+            if (!isExisted)
+            {
+                return nextNumber;
+            }
+
+            return GetFillableNumber(emptyCell, nextNumber, numberChoices);
+        }
+
+        private int InferBoxInitialAxis(int cellAxis)
+        {
+            if (cellAxis < 3)
+            {
+                return 0;
+            }
+
+            if (cellAxis < 6)
+            {
+                return 3;
+            }
+
+            return 6;
+        }
+
+        private (int x, int y) InferBoxStartingCoordinate(Coordinate cellCoordinate)
+        {
+            return (InferBoxInitialAxis(cellCoordinate.X), InferBoxInitialAxis(cellCoordinate.Y));
+        }
+
         private void Load(string filePath)
         {
             string? line;
@@ -154,27 +238,6 @@ namespace Sudoku
             cellColumn.Cells.Add(cell);
             _cells.Add(cell);
         }
-
-        private (int x, int y) InferBoxStartingCoordinate(Coordinate cellCoordinate)
-        {
-            return (InferBoxInitialAxis(cellCoordinate.X), InferBoxInitialAxis(cellCoordinate.Y));
-        }
-
-        private int InferBoxInitialAxis(int cellAxis)
-        {
-            if (cellAxis < 3)
-            {
-                return 0;
-            }
-
-            if (cellAxis < 6)
-            {
-                return 3;
-            }
-
-            return 6;
-        }
-        
         private List<string> Solve(List<int> numberChoices)
         {
             var emptyCells = _cells.Where(c => c.Number == 0).ToList();
@@ -192,126 +255,52 @@ namespace Sudoku
                 queuedEmtpyCells[i].Number = GetFillableNumber(
                     queuedEmtpyCells[i], queuedEmtpyCells[i].Number, numberChoices);
 
-                //Console.WriteLine(ToString());
-                //Thread.Sleep(100);
-                //Console.SetCursorPosition(0, 0);
-
-                // TODO: Refactor nested if
-                var isEmpty = queuedEmtpyCells[i].Number == 0;
-                if (!isEmpty)
+                // Backtrack if the empty cell can't be filled.
+                var canBeFilled = queuedEmtpyCells[i].Number != 0;
+                if (!canBeFilled)
                 {
-                    var isEndOfQueue = i == queuedEmtpyCells.Count - 1;
-                    if (isEndOfQueue)
-                    {
-                        emptyCells = _cells.Where(c => c.Number == 0).ToList();
-                        if (emptyCells.Count == 0)
-                        {
-                            solutions.Add(ToString());
+                    i--;
+                    continue;
+                }
 
-                            // End the loop once the second solution is found
-                            if (solutions.Count > 1)
-                            {
-                                foreach (var emptyCell in queuedEmtpyCells)
-                                {
-                                    emptyCell.Number = 0;
-                                }
+                // Proceed to fill the next empty cell in the queue.
+                var isEndOfQueue = i == queuedEmtpyCells.Count - 1;
+                if (!isEndOfQueue)
+                {
+                    i++;
+                    continue;
+                }
 
-                                break;
-                            }
-
-                            // Backtrack for more solutions
-                            queuedEmtpyCells[i].Number = 0;
-                            i--;
-                            continue;
-                        }
-
-                        mrvEmptyCell = SelectMrvEmptyCell(emptyCells);
-                        queuedEmtpyCells.Add(mrvEmptyCell);
-                    }
+                // Add the next empty cell to the queue.
+                emptyCells = _cells.Where(c => c.Number == 0).ToList();
+                if (emptyCells.Any())
+                {
+                    mrvEmptyCell = SelectMrvEmptyCell(emptyCells);
+                    queuedEmtpyCells.Add(mrvEmptyCell);
 
                     i++;
                     continue;
                 }
 
-                i--;
+                solutions.Add(ToString());
 
-                _recursionCount++;
+                // Backtrack to find more solutions.
+                if (solutions.Count < 2)
+                {
+                    queuedEmtpyCells[i].Number = 0;
+                    i--;
+                    continue;
+                }
+
+                // End the loop once the second solution is found
+                foreach (var emptyCell in queuedEmtpyCells)
+                {
+                    emptyCell.Number = 0;
+                }
+                break;
             }
-
-            //ApplySolution(solutions);
-
-            //Console.WriteLine($"Recursion: {_recursionCount}");
 
             return solutions;
         }
-
-        private void ApplySolution(string solution)
-        {
-            var rows = solution.Split("\n");
-
-            for (int x = 0; x < 9; x++)
-            {
-                for (int y = 0; y < 9; y++)
-                {
-                    var number = int.Parse(rows[x][y].ToString());
-                    var cell = _cells.Single(c => c.Coordinate.X == x && c.Coordinate.Y == y);
-                    cell.Number = number;
-                }
-            }
-        }
-
-        /// <summary>
-        /// MRV empty cell has the highest number of filled cells in its row, column or box.
-        /// </summary>
-        /// <param name="emptyCells"></param>
-        /// <returns></returns>
-        private static Cell SelectMrvEmptyCell(List<Cell> emptyCells)
-        {
-            var mrvEmptyCell = emptyCells[0];
-
-            for (int i = 1; i < emptyCells.Count; i++)
-            {
-                if (GetMaxFilledCellsCount(emptyCells[i]) > GetMaxFilledCellsCount(mrvEmptyCell))
-                {
-                    mrvEmptyCell = emptyCells[i];
-                }
-            }
-
-            return mrvEmptyCell;
-        }
-
-        private static int GetMaxFilledCellsCount(Cell cell)
-        {
-            var rowFilledCellsCount = cell.Row.Cells.Where(c => c.Number != 0).Count();
-            var columnFilledCellsCount = cell.Column.Cells.Where(c => c.Number != 0).Count();
-            var boxFilledCellsCount = cell.Box.Cells.Where(c => c.Number != 0).Count();
-            var maxFilledCellsCount = Math.Max(Math.Max(rowFilledCellsCount, columnFilledCellsCount), boxFilledCellsCount);
-
-            return maxFilledCellsCount;
-        }
-
-        private int GetFillableNumber(Cell emptyCell, int currentNumber, IList<int> numberChoices)
-        {
-            var currentNumberIndex = numberChoices.IndexOf(currentNumber);
-
-            if (currentNumberIndex == 8)
-            {
-                return 0;
-            }
-
-            var nextNumber = numberChoices[currentNumberIndex + 1];
-
-            var isExisted = emptyCell.Box.Cells.Where(cell => cell.Number == nextNumber).Any() ||
-                emptyCell.Row.Cells.Where(cell => cell.Number == nextNumber).Any() ||
-                emptyCell.Column.Cells.Where(cell => cell.Number == nextNumber).Any();
-
-            if (!isExisted)
-            {
-                return nextNumber;
-            }
-
-            return GetFillableNumber(emptyCell, nextNumber, numberChoices);
-        }
-
     }
 }
