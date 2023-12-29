@@ -24,7 +24,7 @@ try
 
     var solution = sudokuPuzzle.Solve();
 
-    Console.WriteLine(solution);
+    Console.WriteLine(solution.Value);
 }
 catch (InvalidOperationException e)
 {

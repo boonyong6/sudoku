@@ -27,6 +27,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="sudoku-puzzle-malformed-repeated-number.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="sudoku-puzzle-malformed-extra-row-items.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="sudoku-puzzle-malformed-extra-row.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="sudoku-puzzle-not-well-posed.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="sudoku-puzzle-easy.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

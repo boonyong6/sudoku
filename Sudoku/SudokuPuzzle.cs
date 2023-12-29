@@ -6,6 +6,7 @@ namespace Sudoku
     {
         private readonly List<Cell> _cells;
         private readonly List<int> _numberChoices;
+
         public SudokuPuzzle(string filePath) : this()
         {
             Load(filePath);
@@ -34,6 +35,7 @@ namespace Sudoku
         public List<CellList> Boxes { get; }
         public List<CellList> Columns { get; }
         public List<CellList> Rows { get; }
+
         public static SudokuPuzzle Create()
         {
             var sudokuPuzzle = new SudokuPuzzle();
@@ -66,7 +68,7 @@ namespace Sudoku
 
                 solutions = sudokuPuzzle.Solve(sudokuPuzzle._numberChoices);
 
-                if (solutions.Count == 0 || solutions.Count > 1)
+                if (solutions.Count > 1)
                 {
                     sudokuPuzzle._cells[randomCellIndex].Number = prevRemovedNumber;
                 }
@@ -75,21 +77,12 @@ namespace Sudoku
             return sudokuPuzzle;
         }
 
-        public string Solve()
+        public SudokuPuzzleSolution Solve()
         {
             var solutions = Solve(_numberChoices);
 
-            if (solutions.Count == 0)
-            {
-                throw new InvalidOperationException("Malformed Sudoku puzzle. No solution found.");
-            }
-
-            if (solutions.Count > 1)
-            {
-                Console.WriteLine("[Warning] More than one solution was found.");
-            }
-
-            return solutions[0];
+            var solution = new SudokuPuzzleSolution(solutions[0], solutions.Count);
+            return solution;
         }
 
         public override string ToString()
@@ -204,6 +197,16 @@ namespace Sudoku
 
                 while (line != null)
                 {
+                    if (row >= 9)
+                    {
+                        throw new InvalidDataException($"Valid Sudoku must have 9 rows, not {row + 1} row(s). {nameof(filePath)}: {filePath}");
+                    }
+
+                    if (line.Length != 9)
+                    {
+                        throw new InvalidDataException($"Row {row + 1} in file \"{filePath}\" doesn't have exactly 9 numbers.");
+                    }
+
                     for (int col = 0; col < line.Length; col++)
                     {
                         var cellCoordinate = new Coordinate(row, col);
@@ -216,6 +219,8 @@ namespace Sudoku
                 }
 
                 sr.Close();
+
+                Validate();
             }
             catch (Exception)
             {
@@ -238,6 +243,7 @@ namespace Sudoku
             cellColumn.Cells.Add(cell);
             _cells.Add(cell);
         }
+
         private List<string> Solve(List<int> numberChoices)
         {
             var emptyCells = _cells.Where(c => c.Number == 0).ToList();
@@ -301,6 +307,23 @@ namespace Sudoku
             }
 
             return solutions;
+        }
+
+        private void Validate()
+        {
+            var filledCells = _cells.Where(c => c.Number != 0);
+
+            foreach (var filledCell in filledCells)
+            {
+                var rowNumberCount = filledCell.Row.Cells.Count(c => c.Number == filledCell.Number);
+                var columnNumberCount = filledCell.Column.Cells.Count(c => c.Number == filledCell.Number);
+                var boxNumberCount = filledCell.Box.Cells.Count(c => c.Number == filledCell.Number);
+
+                if (rowNumberCount > 1 || columnNumberCount > 1 || boxNumberCount > 1)
+                {
+                    throw new InvalidDataException($"Cell ({filledCell.Coordinate.X},{filledCell.Coordinate.Y}) doesn't comply with the Sudoku rules.");
+                }
+            }
         }
     }
 }
