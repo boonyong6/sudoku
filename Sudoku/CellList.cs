@@ -2,15 +2,15 @@
 
 namespace Sudoku
 {
-    public class CellList
+    class CellList
     {
-        public List<Cell> Cells { get; } = new List<Cell>(9);
-        public (int x, int y) StartingCoordinate { get; }
-
-        public CellList((int x, int y) startingCoordinate)
+        public CellList(Coordinate startingCoordinate)
         {
             StartingCoordinate = startingCoordinate;
         }
+
+        public List<Cell> Cells { get; } = new List<Cell>(9);
+        public Coordinate StartingCoordinate { get; }
 
         public override string ToString()
         {
