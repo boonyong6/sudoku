@@ -8,7 +8,7 @@ namespace Sudoku.Tests
         [InlineData("sudoku-puzzle-hard.txt", "359764182\r\n716582493\r\n824913756\r\n691278534\r\n483159267\r\n275436918\r\n937825641\r\n562341879\r\n148697325\r\n")]
         public void Solve_ValidSudoku_UniqueSolutionReturned(string filePath, string answer)
         {
-            var sudokuPuzzle = new SudokuPuzzle(filePath);
+            var sudokuPuzzle = SudokuPuzzle.Create(filePath);
 
             var solution = sudokuPuzzle.Solve();
 
@@ -20,7 +20,7 @@ namespace Sudoku.Tests
         [InlineData("sudoku-puzzle-not-well-posed.txt")]
         public void Solve_NotWellPosedSudoku_HasMoreThanOneSolution(string filePath)
         {
-            var sudokuPuzzle = new SudokuPuzzle(filePath);
+            var sudokuPuzzle = SudokuPuzzle.Create(filePath);
 
             var solution = sudokuPuzzle.Solve();
 
@@ -33,10 +33,9 @@ namespace Sudoku.Tests
         [InlineData("sudoku-puzzle-malformed-repeated-number.txt")]
         public void Instantiate_MalformedSudoku_ThrowInvalidOperationException(string filePath)
         {
-            Assert.Throws<InvalidDataException>(() => new SudokuPuzzle(filePath));
+            Assert.Throws<InvalidDataException>(() => SudokuPuzzle.Create(filePath));
         }
 
-        // test create sudoku
         [Fact]
         public void Create_ValidSudoku_HasUniqueSolution()
         {
@@ -48,6 +47,8 @@ namespace Sudoku.Tests
         }
 
         /* Commands to generate code coverage report (web pages):
+         * 
+         * coverlet .\bin\Debug\net6.0\Sudoku.Tests.dll --target "dotnet" --targetargs "test --no-build"
          * 
          * dotnet test --collect:"XPlat Code Coverage"
          * 

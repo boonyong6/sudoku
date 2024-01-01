@@ -7,11 +7,6 @@ namespace Sudoku
         private readonly List<Cell> _cells;
         private readonly List<int> _numberChoices;
 
-        public SudokuPuzzle(string filePath) : this()
-        {
-            Load(filePath);
-        }
-
         private SudokuPuzzle()
         {
             Boxes = new List<CellList>(9)
@@ -33,7 +28,9 @@ namespace Sudoku
         }
 
         public List<CellList> Boxes { get; }
+
         public List<CellList> Columns { get; }
+
         public List<CellList> Rows { get; }
 
         public static SudokuPuzzle Create()
@@ -73,6 +70,21 @@ namespace Sudoku
                     sudokuPuzzle._cells[randomCellIndex].Number = prevRemovedNumber;
                 }
             }
+
+            return sudokuPuzzle;
+        }
+
+        /// <summary>
+        /// Creates a Sudoku puzzle by loading it from a file.
+        /// </summary>
+        /// <param name="filePath">File path of the Sudoku puzzle.</param>
+        /// <returns>Initialized Sudoku puzzle loaded from a file.</returns>
+        /// <exception cref="InvalidDataException"></exception>
+        public static SudokuPuzzle Create(string filePath)
+        {
+            var sudokuPuzzle = new SudokuPuzzle();
+
+            sudokuPuzzle.LoadFromFile(filePath);
 
             return sudokuPuzzle;
         }
@@ -142,6 +154,27 @@ namespace Sudoku
             }
         }
 
+        /// <summary>
+        /// Checks the validity of filled cells.
+        /// </summary>
+        /// <exception cref="InvalidDataException">Thrown when a cell causes the Sudoku puzzle to become malformed.</exception>
+        private void CheckFilledCellsValidity()
+        {
+            var filledCells = _cells.Where(c => c.Number != 0);
+
+            foreach (var filledCell in filledCells)
+            {
+                var rowNumberCount = filledCell.Row.Cells.Count(c => c.Number == filledCell.Number);
+                var columnNumberCount = filledCell.Column.Cells.Count(c => c.Number == filledCell.Number);
+                var boxNumberCount = filledCell.Box.Cells.Count(c => c.Number == filledCell.Number);
+
+                if (rowNumberCount > 1 || columnNumberCount > 1 || boxNumberCount > 1)
+                {
+                    throw new InvalidDataException($"Cell ({filledCell.Coordinate.X},{filledCell.Coordinate.Y}) doesn't comply with the Sudoku rules.");
+                }
+            }
+        }
+
         private int GetFillableNumber(Cell emptyCell, int currentNumber, IList<int> numberChoices)
         {
             var currentNumberIndex = numberChoices.IndexOf(currentNumber);
@@ -165,7 +198,7 @@ namespace Sudoku
             return GetFillableNumber(emptyCell, nextNumber, numberChoices);
         }
 
-        private int InferBoxInitialAxis(int cellAxis)
+        private int InferBoxStartingAxis(int cellAxis)
         {
             if (cellAxis < 3)
             {
@@ -182,50 +215,7 @@ namespace Sudoku
 
         private (int x, int y) InferBoxStartingCoordinate(Coordinate cellCoordinate)
         {
-            return (InferBoxInitialAxis(cellCoordinate.X), InferBoxInitialAxis(cellCoordinate.Y));
-        }
-
-        private void Load(string filePath)
-        {
-            string? line;
-            int row = 0;
-
-            try
-            {
-                StreamReader sr = new StreamReader(filePath);
-                line = sr.ReadLine();
-
-                while (line != null)
-                {
-                    if (row >= 9)
-                    {
-                        throw new InvalidDataException($"Valid Sudoku must have 9 rows, not {row + 1} row(s). {nameof(filePath)}: {filePath}");
-                    }
-
-                    if (line.Length != 9)
-                    {
-                        throw new InvalidDataException($"Row {row + 1} in file \"{filePath}\" doesn't have exactly 9 numbers.");
-                    }
-
-                    for (int col = 0; col < line.Length; col++)
-                    {
-                        var cellCoordinate = new Coordinate(row, col);
-                        var number = int.Parse(line[col].ToString());
-                        LoadCell(cellCoordinate, number);
-                    }
-
-                    line = sr.ReadLine();
-                    row++;
-                }
-
-                sr.Close();
-
-                Validate();
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            return (InferBoxStartingAxis(cellCoordinate.X), InferBoxStartingAxis(cellCoordinate.Y));
         }
 
         private void LoadCell(Coordinate cellCoordinate, int number)
@@ -242,6 +232,47 @@ namespace Sudoku
             cellRow.Cells.Add(cell);
             cellColumn.Cells.Add(cell);
             _cells.Add(cell);
+        }
+
+        /// <summary>
+        /// Loads Sudoku puzzle from a file.
+        /// </summary>
+        /// <param name="filePath">File path of the Sudoku puzzle.</param>
+        /// <exception cref="InvalidDataException">Thrown when Sudoku puzzle is malformed.</exception>
+        private void LoadFromFile(string filePath)
+        {
+            string? line;
+            int row = 0;
+
+            StreamReader sr = new StreamReader(filePath);
+            line = sr.ReadLine();
+
+            while (line != null)
+            {
+                if (row >= 9)
+                {
+                    throw new InvalidDataException($"Valid Sudoku must have 9 rows, not {row + 1} row(s). {nameof(filePath)}: {filePath}");
+                }
+
+                if (line.Length != 9)
+                {
+                    throw new InvalidDataException($"Row {row + 1} in file \"{filePath}\" doesn't have exactly 9 numbers.");
+                }
+
+                for (int col = 0; col < line.Length; col++)
+                {
+                    var cellCoordinate = new Coordinate(row, col);
+                    var number = int.Parse(line[col].ToString());
+                    LoadCell(cellCoordinate, number);
+                }
+
+                line = sr.ReadLine();
+                row++;
+            }
+
+            sr.Close();
+
+            CheckFilledCellsValidity();
         }
 
         private List<string> Solve(List<int> numberChoices)
@@ -307,23 +338,6 @@ namespace Sudoku
             }
 
             return solutions;
-        }
-
-        private void Validate()
-        {
-            var filledCells = _cells.Where(c => c.Number != 0);
-
-            foreach (var filledCell in filledCells)
-            {
-                var rowNumberCount = filledCell.Row.Cells.Count(c => c.Number == filledCell.Number);
-                var columnNumberCount = filledCell.Column.Cells.Count(c => c.Number == filledCell.Number);
-                var boxNumberCount = filledCell.Box.Cells.Count(c => c.Number == filledCell.Number);
-
-                if (rowNumberCount > 1 || columnNumberCount > 1 || boxNumberCount > 1)
-                {
-                    throw new InvalidDataException($"Cell ({filledCell.Coordinate.X},{filledCell.Coordinate.Y}) doesn't comply with the Sudoku rules.");
-                }
-            }
         }
     }
 }

@@ -11,4 +11,10 @@
     <Compile Remove="Box.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="sudoku-puzzle.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
