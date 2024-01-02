@@ -31,7 +31,7 @@ namespace Sudoku.Tests
         [InlineData(@"TestData\sudoku-puzzle-malformed-extra-row.txt")]
         [InlineData(@"TestData\sudoku-puzzle-malformed-extra-row-items.txt")]
         [InlineData(@"TestData\sudoku-puzzle-malformed-repeated-number.txt")]
-        public void Instantiate_MalformedSudoku_ThrowInvalidOperationException(string filePath)
+        public void Instantiate_MalformedSudoku_ThrowInvalidDataException(string filePath)
         {
             Assert.Throws<InvalidDataException>(() => SudokuPuzzle.Create(filePath.Replace('\\', Path.DirectorySeparatorChar)));
         }
@@ -45,14 +45,5 @@ namespace Sudoku.Tests
 
             Assert.Equal(1, solution.Count);
         }
-
-        /* Commands to generate code coverage report (web pages):
-         * 
-         * coverlet .\bin\Debug\net6.0\Sudoku.Tests.dll --target "dotnet" --targetargs "test --no-build"
-         * 
-         * dotnet test --collect:"XPlat Code Coverage"
-         * 
-         * reportgenerator -reports:"Path\To\TestProject\TestResults\{guid}\coverage.cobertura.xml" -targetdir:"coveragereport" -reporttypes:Html
-        */
     }
 }
