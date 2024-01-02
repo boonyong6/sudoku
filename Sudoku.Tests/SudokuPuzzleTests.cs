@@ -8,7 +8,7 @@ namespace Sudoku.Tests
         [InlineData(@"TestData\sudoku-puzzle-hard.txt", "359764182\r\n716582493\r\n824913756\r\n691278534\r\n483159267\r\n275436918\r\n937825641\r\n562341879\r\n148697325\r\n")]
         public void Solve_ValidSudoku_UniqueSolutionReturned(string filePath, string answer)
         {
-            var sudokuPuzzle = SudokuPuzzle.Create(filePath);
+            var sudokuPuzzle = SudokuPuzzle.Create(Path.GetFullPath(filePath));
 
             var solution = sudokuPuzzle.Solve();
 
@@ -20,7 +20,7 @@ namespace Sudoku.Tests
         [InlineData(@"TestData\sudoku-puzzle-not-well-posed.txt")]
         public void Solve_NotWellPosedSudoku_HasMoreThanOneSolution(string filePath)
         {
-            var sudokuPuzzle = SudokuPuzzle.Create(filePath);
+            var sudokuPuzzle = SudokuPuzzle.Create(Path.GetFullPath(filePath));
 
             var solution = sudokuPuzzle.Solve();
 
@@ -33,7 +33,7 @@ namespace Sudoku.Tests
         [InlineData(@"TestData\sudoku-puzzle-malformed-repeated-number.txt")]
         public void Instantiate_MalformedSudoku_ThrowInvalidOperationException(string filePath)
         {
-            Assert.Throws<InvalidDataException>(() => SudokuPuzzle.Create(filePath));
+            Assert.Throws<InvalidDataException>(() => SudokuPuzzle.Create(Path.GetFullPath(filePath)));
         }
 
         [Fact]
