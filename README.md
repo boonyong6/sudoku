@@ -1,4 +1,6 @@
 # Sudoku
+[![codecov](https://codecov.io/github/boonyong6/sudoku/graph/badge.svg?token=0PY68EXOKC)](https://codecov.io/github/boonyong6/sudoku)
+
 ## Commands
 
 **Code Coverage Overview**
