@@ -12,7 +12,7 @@ namespace Sudoku.Tests
 
             var solution = sudokuPuzzle.Solve();
 
-            Assert.Equal(answer, solution.Value);
+            Assert.Equal(answer.Replace("\r\n", Environment.NewLine), solution.Value);
             Assert.Equal(1, solution.Count);
         }
 
